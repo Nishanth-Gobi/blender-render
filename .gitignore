@@ -1,2 +1,4 @@
 *.blend
 *.png
+__pycache__/
+outputs/

@@ -19,9 +19,11 @@ import blend_render_info
 
 SOURCE_FILE = ""
 SOURCE_URL = ""
+RENDER_BLOCK_SIZE = 10
 
 MAX_CONNECTIONS = 5
-SERVER_ADDRESS = "127.0.0.1"
+# SERVER_ADDRESS = "127.0.0.1"
+SERVER_ADDRESS = "10.1.82.126"
 SERVER_PORT = 5555
 
 
@@ -29,11 +31,11 @@ SERVER_PORT = 5555
 # Loading configs
 #---------------------------------------------------------------------
 
-with open('config.yml', 'r') as f:
-    config = yaml.safe_load(f)
+# with open('config.yml', 'r') as f:
+#     config = yaml.safe_load(f)
 
 
-RENDER_BLOCK_SIZE = config['render_block_size_in_client']
+# RENDER_BLOCK_SIZE = config['render_block_size_in_client']
 
 #---------------------------------------------------------------------
 # Command line arguments
@@ -41,8 +43,8 @@ RENDER_BLOCK_SIZE = config['render_block_size_in_client']
 
 argumentList = sys.argv[1:]
 
-options = "hm:s:u:"
-long_options = ["help", "max-connections=", "source=", "source-url="]
+options = "hm:s:u:b:"
+long_options = ["help", "max-connections=", "source=", "source-url=", "block-size="]
 
 try:
     arguments, values = getopt.getopt(argumentList, options, long_options)
@@ -64,6 +66,10 @@ try:
         elif currentArgument in ("-u", "--source-url"):
             SOURCE_URL = currentValue
             print(f"Source URL: {SOURCE_URL}")
+
+        elif currentArgument in ("-b", "--block-size"):
+            RENDER_BLOCK_SIZE = int(currentValue)
+            print(f"Render block size: {RENDER_BLOCK_SIZE}")
 
 except getopt.error as err:
     print(str(err))
@@ -111,11 +117,9 @@ def handle_client(client_socket, client_address):
                 
     
     print(f"{client_address}: Closing connection")
-    client_socket.shutdown(socket.SHUT_RDWR)
-    client_socket.close()
+    # client_socket.shutdown(socket.SHUT_RDWR)
+    # client_socket.close()
     return
-        
-
         
 
 #---------------------------------------------------------------------
@@ -144,21 +148,6 @@ def get_num_frames() -> int:
 
     return frame_end - frame_start + 1
 
-    # https://blender.stackexchange.com/questions/3141/get-number-of-frames-in-scene-from-the-command-line
-
-    # out = subprocess.Popen(['blender', '-b', SOURCE_FILE, '-P', FRAME_COUNTER_APP],
-    #                        stdout=subprocess.PIPE,
-    #                        stderr=subprocess.STDOUT)
-
-    # stdout, stderr = out.communicate()
-    # no_of_frames = stdout.decode("utf8").split('\n')[0].split(' ')[-1]
-    # try:
-    #     no_of_frames = int(no_of_frames)
-    #     return no_of_frames
-    # except TypeError:
-    #     print("ERROR: Invalid number of frames")
-    #     return 0
-
 
 #---------------------------------------------------------------------
 # Function to build the queue
@@ -179,14 +168,9 @@ def build_queue():
 
         start_frame += RENDER_BLOCK_SIZE + 1
 
-    print("Message queue: ")
-    print(*list(message_queue.queue), sep='\n\n')
+    # print("Message queue: ")
+    # print(*list(message_queue.queue), sep='\n\n')
 
-    message = message_queue.get()
-    print("\n\n\n message 1: ", message)
-
-    # message = message_queue.get()
-    # print("\n\n\n message 2: ", message)
 
 
 # Start the thread for splitting the file
@@ -194,5 +178,5 @@ master_thread = threading.Thread(target=build_queue)
 master_thread.start()
 
 # Start the thread that listens for client connections
-# listen_thread = threading.Thread(target=listen_for_clients)
-# listen_thread.start()
+listen_thread = threading.Thread(target=listen_for_clients)
+listen_thread.start()

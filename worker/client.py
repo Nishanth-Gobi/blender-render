@@ -12,10 +12,11 @@ client_socket = socket.socket()
 
 # Define host and port
 host = "127.0.0.1"
+# host = "10.1.82.126"
 port = 5555
 
 # Connect to the server
-# client_socket.connect((host, port))
+client_socket.connect((host, port))
 
 file_downloaded = True # TODO: set to False
 
