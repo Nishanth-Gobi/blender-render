@@ -6,8 +6,6 @@ import getopt
 import sys
 import socket
 import threading
-import subprocess
-import yaml
 import pickle
 from math import floor
 from queue import Queue
@@ -26,16 +24,6 @@ MAX_CONNECTIONS = 5
 SERVER_ADDRESS = "10.1.82.126"
 SERVER_PORT = 5555
 
-
-#---------------------------------------------------------------------
-# Loading configs
-#---------------------------------------------------------------------
-
-# with open('config.yml', 'r') as f:
-#     config = yaml.safe_load(f)
-
-
-# RENDER_BLOCK_SIZE = config['render_block_size_in_client']
 
 #---------------------------------------------------------------------
 # Command line arguments
@@ -168,7 +156,7 @@ def build_queue():
 
         start_frame += RENDER_BLOCK_SIZE + 1
 
-    # print("Message queue: ")
+    print(f"Message queue size: {message_queue.qsize()}")
     # print(*list(message_queue.queue), sep='\n\n')
 
 
@@ -178,5 +166,5 @@ master_thread = threading.Thread(target=build_queue)
 master_thread.start()
 
 # Start the thread that listens for client connections
-listen_thread = threading.Thread(target=listen_for_clients)
-listen_thread.start()
+# listen_thread = threading.Thread(target=listen_for_clients)
+# listen_thread.start()
