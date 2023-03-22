@@ -1,5 +1,5 @@
 #
-#   Client
+#   Worker
 #
 
 import pickle
