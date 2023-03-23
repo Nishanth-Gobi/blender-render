@@ -2,26 +2,23 @@
 # Master
 # 
 
-import getopt
-import sys
 import socket
 import threading
 import pickle
 from math import floor
 from queue import Queue
 import blend_render_info
+import argparse
 
 #---------------------------------------------------------------------
-# MACROs
+# Global defaults
 #---------------------------------------------------------------------
 
 SOURCE_FILE = ""
 SOURCE_URL = ""
 RENDER_BLOCK_SIZE = 10
-
 MAX_CONNECTIONS = 5
-# SERVER_ADDRESS = "127.0.0.1"
-SERVER_ADDRESS = "10.1.82.126"
+SERVER_ADDRESS = "127.0.0.1"
 SERVER_PORT = 5555
 
 
@@ -29,38 +26,28 @@ SERVER_PORT = 5555
 # Command line arguments
 #---------------------------------------------------------------------
 
-argumentList = sys.argv[1:]
+parser = argparse.ArgumentParser()
 
-options = "hm:s:u:b:"
-long_options = ["help", "max-connections=", "source=", "source-url=", "block-size="]
+parser.add_argument('-m', '--max-connections', type=int, default=MAX_CONNECTIONS, help='Limits the maximum number of worker nodes')
 
-try:
-    arguments, values = getopt.getopt(argumentList, options, long_options)
-    
-    for currentArgument, currentValue in arguments:
+parser.add_argument('-f', '--source-file', type=str, default=SOURCE_FILE, help='Sets the local source of the .blend file', required=True)
 
-        if currentArgument in ("-h", "--help"):
-            print("Displaying help") 
-            exit(0)
+parser.add_argument('-u', '--source-url', type=str, default=SOURCE_URL, help='Sets the source url of the hosted .blend file', required=True)
 
-        elif currentArgument in ("-m", "--max-connections"):
-            MAX_CONNECTIONS = int(currentValue)
-            print(f"Max-connection limit: {MAX_CONNECTIONS}")
+parser.add_argument('-b', '--block-size', type=int, default=RENDER_BLOCK_SIZE, help='Sets the frame count to be handled by each worker node per connection')
 
-        elif currentArgument in ("-s", "--source"):
-            SOURCE_FILE = currentValue
-            print(f"Source File: {SOURCE_FILE}")
+parser.add_argument('-o', '--host', type=str, default=SERVER_ADDRESS, help='Sets the server ADDRESS', required=True)
 
-        elif currentArgument in ("-u", "--source-url"):
-            SOURCE_URL = currentValue
-            print(f"Source URL: {SOURCE_URL}")
+parser.add_argument('-p', '--port', type=int, default=SERVER_PORT, help='Sets the server PORT')
 
-        elif currentArgument in ("-b", "--block-size"):
-            RENDER_BLOCK_SIZE = int(currentValue)
-            print(f"Render block size: {RENDER_BLOCK_SIZE}")
+args = parser.parse_args()
 
-except getopt.error as err:
-    print(str(err))
+MAX_CONNECTIONS = args.max_connections
+SOURCE_FILE = args.source_file
+SOURCE_URL = args.source_url
+RENDER_BLOCK_SIZE = args.block_size
+SERVER_ADDRESS = args.host
+SERVER_PORT = args.port
 
 
 # Create a socket object and bind it to the server address and port
@@ -166,5 +153,5 @@ master_thread = threading.Thread(target=build_queue)
 master_thread.start()
 
 # Start the thread that listens for client connections
-# listen_thread = threading.Thread(target=listen_for_clients)
-# listen_thread.start()
+listen_thread = threading.Thread(target=listen_for_clients)
+listen_thread.start()

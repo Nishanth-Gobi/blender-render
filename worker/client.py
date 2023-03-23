@@ -8,26 +8,54 @@ import subprocess
 import gdown
 from os.path import exists
 import platform
+import argparse
 
 
+#---------------------------------------------------------------------
+# Global variables
+#---------------------------------------------------------------------
 LOCAL_FILE_NAME = "blend-file.blend"
-BLENDER_COMMAND_UTILITY = 'blender'
-
-match platform.system():
-    case 'Darwin':
-        BLEND_COMMAND_UTILITY = 'Blender'        
+BLENDER_COMMAND_UTILITY = None
+SERVER_ADDRESS = "127.0.0.1"
+SERVER_PORT = 5555
 
 
-# Create a socket object
+#---------------------------------------------------------------------
+# Command line arguments
+#---------------------------------------------------------------------
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-o', '--host', type=str, default=SERVER_ADDRESS, help='Set the server IP to connect to', required=True)
+
+parser.add_argument('-p', '--port', type=int, default=SERVER_PORT, help='Set the server PORT to connect to')
+
+parser.add_argument('-l', '--local-source-name', type=str, default=LOCAL_FILE_NAME, help='Set the name for the local copy of the .blend file')
+
+args = parser.parse_args()
+
+
+#---------------------------------------------------------------------
+# Set the blender cli command based on user's platform
+#---------------------------------------------------------------------
+system = platform.system()
+
+if system == 'Darwin':
+    BLEND_COMMAND_UTILITY = 'Blender'        
+elif system == 'Linux':
+    BLENDER_COMMAND_UTILITY = 'blender'
+else:
+    raise ValueError(f"Unsupported platform: {system}")
+
+
+#---------------------------------------------------------------------
+# Create client socket and connect to the server
+#---------------------------------------------------------------------
 client_socket = socket.socket()
 
-# Define host and port
-# host = "127.0.0.1"
-host = "10.1.82.126"
-port = 5555
+SERVER_ADDRESS = args.host
+SERVER_PORT = args.port
 
-# Connect to the server
-client_socket.connect((host, port))
+client_socket.connect((SERVER_ADDRESS, SERVER_PORT))
 
 
 #---------------------------------------------------------------------
@@ -82,7 +110,3 @@ while True:
         local_path = download(message['src'])
 
     render(local_path, message['start_frame'], message['end_frame'])
-
-
-# if __name__ == '__main__':
-#     render("blend-file.blend", 1, 3)
