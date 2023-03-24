@@ -40,7 +40,7 @@ args = parser.parse_args()
 system = platform.system()
 
 if system == 'Darwin':
-    BLEND_COMMAND_UTILITY = 'Blender'        
+    BLENDER_COMMAND_UTILITY = 'Blender'        
 elif system == 'Linux':
     BLENDER_COMMAND_UTILITY = 'blender'
 else:
