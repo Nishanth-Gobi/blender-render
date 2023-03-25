@@ -61,17 +61,22 @@ client_socket.connect((SERVER_ADDRESS, SERVER_PORT))
 #---------------------------------------------------------------------
 # Function to run blender cli 
 #---------------------------------------------------------------------
-def render(source: str, start_frame: int, end_frame: int):
+def render(source: str, start_frame: int, end_frame: int) -> int:
     
     print(f"blender -b {source} -f {start_frame}..{end_frame}")
     print(f"Rendering file...")
 
-    out = subprocess.Popen(
-        [BLENDER_COMMAND_UTILITY, '-b', source, '-o', './outputs/frame_#####', '-s', str(start_frame), '-e', str(end_frame),'-a'],                  
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        shell=True
-    )
+    try:
+        out = subprocess.Popen(
+            [BLENDER_COMMAND_UTILITY, '-b', source, '-o', './outputs/frame_#####', '-s', str(start_frame), '-e', str(end_frame),'-a'],                  
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True
+        )
+    except:
+        print("ERROR: Blender executable not found. This could be because,\n1. Blender is not installed in the system\n2. The PATH variable to the blender executable is not set.")
+
+        return 1
 
     stdout, stderr = out.communicate()  
     print(stdout)
@@ -109,4 +114,10 @@ while True:
     if not exists(LOCAL_FILE_NAME):
         local_path = download(message['src'])
 
-    render(local_path, message['start_frame'], message['end_frame'])
+    res = render(local_path, message['start_frame'], message['end_frame'])
+
+    if(res==1){
+
+        print("\nStopping client...")    
+        break
+    }
