@@ -116,8 +116,6 @@ while True:
 
     res = render(local_path, message['start_frame'], message['end_frame'])
 
-    if(res==1){
-
+    if res==1:
         print("\nStopping client...")    
         break
-    }
