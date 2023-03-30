@@ -16,6 +16,7 @@ import argparse
 #---------------------------------------------------------------------
 LOCAL_FILE_NAME = "blend-file.blend"
 BLENDER_COMMAND_UTILITY = None
+BLENDER_SHELL_FLAG = True
 SERVER_ADDRESS = "127.0.0.1"
 SERVER_PORT = 5555
 
@@ -40,7 +41,8 @@ args = parser.parse_args()
 system = platform.system()
 
 if system == 'Darwin':
-    BLENDER_COMMAND_UTILITY = 'Blender'        
+    BLENDER_COMMAND_UTILITY = 'Blender'
+    BLENDER_SHELL_FLAG = False        
 elif system == 'Linux':
     BLENDER_COMMAND_UTILITY = 'blender'
 else:
@@ -71,7 +73,7 @@ def render(source: str, start_frame: int, end_frame: int) -> int:
             [BLENDER_COMMAND_UTILITY, '-b', source, '-o', './outputs/frame_#####', '-s', str(start_frame), '-e', str(end_frame),'-a'],                  
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            shell=True
+            shell=BLENDER_SHELL_FLAG
         )
     except:
         print("ERROR: Blender executable not found. This could be because,\n1. Blender is not installed in the system\n2. The PATH variable to the blender executable is not set.")
