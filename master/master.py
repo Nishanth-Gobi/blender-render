@@ -92,8 +92,8 @@ def handle_client(client_socket, client_address):
                 
     
     print(f"{client_address}: Closing connection")
-    # client_socket.shutdown(socket.SHUT_RDWR)
-    # client_socket.close()
+    client_socket.shutdown(socket.SHUT_RDWR)
+    client_socket.close()
     return
         
 
