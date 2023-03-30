@@ -63,7 +63,7 @@ client_socket.connect((SERVER_ADDRESS, SERVER_PORT))
 #---------------------------------------------------------------------
 def render(source: str, start_frame: int, end_frame: int) -> int:
     
-    print(f"blender -b {source} -f {start_frame}..{end_frame}")
+    print(f"{BLENDER_COMMAND_UTILITY} -b {source} -f {start_frame}..{end_frame}")
     print(f"Rendering file...")
 
     try:
