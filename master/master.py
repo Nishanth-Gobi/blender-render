@@ -9,6 +9,7 @@ from math import floor
 from queue import Queue
 import blend_render_info
 import argparse
+import os
 
 #---------------------------------------------------------------------
 # Global defaults
@@ -16,10 +17,14 @@ import argparse
 
 SOURCE_FILE = ""
 SOURCE_URL = ""
+
 RENDER_BLOCK_SIZE = 10
 MAX_CONNECTIONS = 5
+
 SERVER_ADDRESS = "127.0.0.1"
 SERVER_PORT = 5555
+
+NO_OF_TRIALS = 3
 
 
 #---------------------------------------------------------------------
@@ -52,6 +57,7 @@ SERVER_PORT = args.port
 
 # Create a socket object and bind it to the server address and port
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server_socket.bind((SERVER_ADDRESS, SERVER_PORT))
 
 # Create the message queue
@@ -59,41 +65,112 @@ message_queue = Queue()
 
 
 #---------------------------------------------------------------------
+# Function that sends the source file
+#---------------------------------------------------------------------
+def send_file(client_socket):
+
+    file_size = os.path.getsize(SOURCE_FILE)
+    file_name = SOURCE_FILE.split('/')[-1]
+
+    message = {
+        'file_name': file_name,
+        'file_size': file_size
+    }
+    client_socket.send(pickle.dumps(message))
+
+    file = open(SOURCE_FILE, 'rb')
+    chunk = file.read(1024)
+    while chunk:
+        client_socket.send(chunk)
+        chunk = file.read(1024)
+
+    file.close()
+
+    response = client_socket.recv(1024)
+    response = pickle.loads(response)
+
+    if response['received'] == True:
+        return 0        
+    else:
+        return 1
+
+
+#---------------------------------------------------------------------
 # Function that handles comms with each client
 #---------------------------------------------------------------------
 def handle_client(client_socket, client_address):
 
-    # TODO: authenticate client?
+    # TODO: authenticate client
 
-    counter = 1
-    while not message_queue.empty():
+    # Sending the file
 
-        # get message from queue
-        message = message_queue.get()
+    file_sent_flag = False
+    for trial in range(NO_OF_TRIALS):
+        print(f"{client_address}: Sending source file : trial {trial}")
+        out = send_file(client_socket)
+        if out == 0:
+            print(f"...Sent source file")
+            file_sent_flag = True
+            break
+        else:
+            print(f"{client_address}: Retrying to send source file...")
+    
+    # Sending the URL
 
-        print('-'*50)
-        print(f"{client_address}: \n Action no: {counter} \nStart frame: {message['start_frame']} \nEnd frame: {message['end_frame']}")
-        print('-'*50)
+    if not file_sent_flag:
 
-        # send message to client
-        client_socket.send(pickle.dumps(message))
-        
-        # get a response 
+        print(f"{client_address}: Unable to send source file...Sending URL instead")
+
+        message = {
+            'src': SOURCE_URL
+        }
+        client_socket.send(pickle.dumps(message)) 
+
         data = client_socket.recv(1024)
         response = pickle.loads(data)
 
-        # stop if the client want's to stop
-        if not response['get_file']:
-            print("{client_address}: Client want's to stop")
-            break
+        if response['received']:
+            file_sent_flag = True
+        else:
+            print(f"{client_address}: Failed to send source file!")
 
-    else:
-        print(f"{client_address}: Message queue empty")
+    # Sending the render commands
+
+    if file_sent_flag:
+
+        counter = 1
+
+        while not message_queue.empty():
+
+            # get message from queue
+            message = message_queue.get()
+
+            print('-'*50)
+            print(f"{client_address}: \n Action no: {counter} \nStart frame: {message['start_frame']} \nEnd frame: {message['end_frame']}")
+            print('-'*50)
+
+            # send frame to client
+            client_socket.send(pickle.dumps(message))
+            
+            # get a response 
+            data = client_socket.recv(1024)
+            response = pickle.loads(data)
+
+            # stop if the client's failed
+            if not response['status']:
+
+                # Add the last render command back to queue
+                message_queue.put(message)
+
+                print(f"{client_address}: Client not ready")
+                break
+
+        else:
+            print(f"{client_address}: Message queue empty")
                 
-    
-    print(f"{client_address}: Closing connection")
-    client_socket.shutdown(socket.SHUT_RDWR)
-    client_socket.close()
+    print(f"{client_address}: Closing connection...")
+    # client_socket.shutdown(socket.SHUT_RDWR)
+    # client_socket.close()
     return
         
 
@@ -136,7 +213,6 @@ def build_queue():
     for frame_block in range(floor(num_frames/10)):
 
         message_queue.put({
-            'src': SOURCE_URL,
             'start_frame': start_frame,
             'end_frame': start_frame + RENDER_BLOCK_SIZE
         })
