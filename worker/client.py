@@ -8,7 +8,6 @@ import subprocess
 import gdown
 import platform
 import argparse
-from tqdm import tqdm_gui
 
 #---------------------------------------------------------------------
 # Global defaults
